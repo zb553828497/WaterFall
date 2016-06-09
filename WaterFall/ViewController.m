@@ -8,12 +8,24 @@
 
 #import "ViewController.h"
 #import "ZBWaterFallLayout.h"
-@interface ViewController ()<UICollectionViewDataSource>
+#import "ZBShopCollectionViewCell.h"
+#import "ZBShop.h"
+#import "MJExtension.h"
 
+@interface ViewController ()<UICollectionViewDataSource>
+/** 所有的商品数据 */
+@property(nonatomic,strong)NSMutableArray *shops;
 @end
 
 static NSString *const ZBShopId = @"shop";
 @implementation ViewController
+
+-(NSMutableArray *)shops{
+    if (_shops == nil) {
+        _shops = [NSMutableArray array];
+    }
+    return _shops;
+}
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -26,24 +38,21 @@ static NSString *const ZBShopId = @"shop";
     [self.view addSubview:collectionView];
     
     // 3.注册
-    [collectionView registerClass:[UICollectionViewCell class] forCellWithReuseIdentifier:ZBShopId];
+    [collectionView registerNib:[UINib nibWithNibName:NSStringFromClass([ZBShopCollectionViewCell class]) bundle:nil] forCellWithReuseIdentifier:ZBShopId ];
+    
+    NSArray *shops = [ZBShop objectArrayWithFilename:@"Clothes.plist"];
+    [self.shops addObjectsFromArray:shops];
+    // 注意:图片的背景是collectionView不是当前控制器，所以设置背景应该用collectionView.backgroundColor
+    collectionView.backgroundColor = [UIColor whiteColor];
  }
 #pragma mark - UICollectionViewDataSource
 -(NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section{
-    return 50;
+    return self.shops.count;
 }
 -(UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath{
-    UICollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:ZBShopId forIndexPath:indexPath];
-    cell.backgroundColor = [UIColor grayColor];
-    NSInteger tag = 10;
-    UILabel *label = (UILabel *)[cell.contentView viewWithTag:tag];
-    if (label == nil) {
-        label = [[UILabel alloc] init];
-        label.tag = tag;
-        [cell.contentView addSubview:label];
-    }
-    label.text = [NSString stringWithFormat:@"%zd",indexPath.item];
-    [label sizeToFit];
+    ZBShopCollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:ZBShopId forIndexPath:indexPath];
+    cell.shop = self.shops[indexPath.item];
+    
     return cell;
 }
 
