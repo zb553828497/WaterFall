@@ -12,7 +12,7 @@
 #import "ZBShop.h"
 #import "MJExtension.h"
 
-@interface ViewController ()<UICollectionViewDataSource>
+@interface ViewController ()<UICollectionViewDataSource,ZBWaterFallLayoutDelegate>
 /** 所有的商品数据 */
 @property(nonatomic,strong)NSMutableArray *shops;
 @end
@@ -30,8 +30,11 @@ static NSString *const ZBShopId = @"shop";
 - (void)viewDidLoad {
     [super viewDidLoad];
     
+    
+    
     // 1.创建布局
     ZBWaterFallLayout *layout = [[ZBWaterFallLayout alloc] init];
+    layout.delegate = self;
     // 2.创建CollectionView
     UICollectionView *collectionView = [[UICollectionView alloc] initWithFrame:self.view.bounds collectionViewLayout:layout];
     collectionView.dataSource = self;
@@ -56,7 +59,21 @@ static NSString *const ZBShopId = @"shop";
     return cell;
 }
 
-
+#pragma mark - ZBWaterFallLayoutDelegate
+-(CGFloat)WaterFallLayout:(ZBWaterFallLayout *)waterFallLayout heightForItemAtIndex:(NSUInteger)index ItemWidth:(CGFloat)itemWidth{
+    ZBShop *shop = self.shops[index];
+    // 交叉相成，计算等比例缩放之后的h高度
+    return itemWidth *shop.h / shop.w;
+}
+-(CGFloat)RowMarginInWaterFallLayout:(ZBWaterFallLayout *)waterFallLayout{
+    return 20;
+}
+-(CGFloat)ColumnCountInWaterFallLayout:(ZBWaterFallLayout *)waterFallLayout{
+    return 3;
+}
+-(UIEdgeInsets)EdgeInsetsInWaterFallLayout:(ZBWaterFallLayout *)waterFallLayout{
+    return UIEdgeInsetsMake(10, 20, 30, 100);
+}
 
 
 

@@ -24,6 +24,15 @@ static const UIEdgeInsets ZBDefaultEdgeInsets = {10,10,10,10};
 @property(nonatomic,strong)NSMutableArray *columnHeights;
 /** 存放所有小格子的布局属性 */
 @property(nonatomic,strong)NSMutableArray *attrsArray;
+
+/** 行间距*/
+@property(nonatomic,assign)CGFloat rowMargin;
+/** 列间距*/
+@property(nonatomic,assign)CGFloat columnMargin;
+/** 每一行小格子的个数*/
+@property(nonatomic,assign)NSInteger columnCount;
+/** 小格子距离屏幕的上左下右的距离*/
+@property(nonatomic,assign)UIEdgeInsets edgeInsets;
 @end
 
 @implementation ZBWaterFallLayout
@@ -41,6 +50,44 @@ static const UIEdgeInsets ZBDefaultEdgeInsets = {10,10,10,10};
     return _attrsArray;
 
 }
+// 小格子的行间距由代理(ViewController)决定，代理只要实现了RowMarginInWaterFallLayout:方法，并在方法中返回一个数(例如20)，那么声明代理方法的当前类(ZBWaterFallLayout)就能拿到这个20，把代理方法返回过来的20作为当前类的行间距，来计算每一行小格子的间距
+-(CGFloat)rowMargin{
+    // 优先使用代理设置的数据，如果代理没有通过代理方法设置数据，就使用当前类默认设置的数据
+    if([self.delegate respondsToSelector:@selector(RowMarginInWaterFallLayout:)]){
+        return [self.delegate RowMarginInWaterFallLayout:self];
+    }else{
+        return ZBDefaultRowMargin;
+    }
+}
+// 小格子的列间距由代理(ViewController)决定，代理只要实现了ColumnMarginInWaterFallLayout:方法，并在代理方法中返回一个数(例如10)，那么声明代理方法的当前类(ZBWaterFallLayout)就能拿到这个10，把代理方法返回过来的30作为当前类的列间距，来计算每一列小格子的间距
+-(CGFloat)columnMargin{
+    // 优先使用代理设置的数据，如果代理没有通过代理方法设置数据，就使用当前类默认设置的数据
+    if([self.delegate respondsToSelector:@selector(ColumnMarginInWaterFallLayout:)]){
+        return [self.delegate ColumnMarginInWaterFallLayout:self];
+    }else{
+        return ZBDefaultRowMargin;
+    }
+}
+// 每一行小格子的数量由代理(ViewController)决定，代理只要实现了ColumnCountInWaterFallLayout:方法，并在代理方法中返回一个数字(例如3),那么声明代理方法的当前类(ZBWaterFallLayout)就能拿到这个3，把代理方法返回过来的3作为每一行小格子的数量
+-(NSInteger)columnCount{
+    // 优先使用代理设置的数据，如果代理没有通过代理方法设置数据，就使用当前类默认设置的数据
+    if ([self.delegate respondsToSelector:@selector(ColumnCountInWaterFallLayout:)]) {
+        return   [self.delegate ColumnCountInWaterFallLayout:self];
+    }else{
+        return  ZBDefaultColumnCount;
+    }
+}
+// 小格子距离上左下右的距离由代理(ViewController)决定，代理只要实现了EdgeInsetsInWaterFallLayout:方法，并在代理方法中返回一个UIEdgeInsets类型数据(10, 20, 30, 100)，那么声明代理方法的当前类(ZBWaterFallLayout)就能拿到这个(10, 20, 30, 100)，把代理方法返回过来的(10, 20, 30, 100)作为小格子上左下右的距离，声明代理方法的当前类，只需要访问top, left, bottom, right中的其中一个属性，就能够设置小格子距离屏幕的上部/左部/下部/右部的距离
+
+-(UIEdgeInsets)edgeInsets{
+    // 优先使用代理设置的数据，如果代理没有通过代理方法设置数据，就使用当前类默认设置的数据
+    if ([self.delegate respondsToSelector:@selector(EdgeInsetsInWaterFallLayout:)]) {
+        return [self.delegate EdgeInsetsInWaterFallLayout:self];
+    }else{
+        return ZBDefaultEdgeInsets;
+    }
+}
+
 
 /**
  * 1.初始化
@@ -84,7 +131,10 @@ static const UIEdgeInsets ZBDefaultEdgeInsets = {10,10,10,10};
     // indexPath位置上的小格子的宽度 = (collectionView的宽度 - 左边缘 - 右边缘 - 中间的间距) / 列数
     CGFloat w = (collectionViewW - ZBDefaultEdgeInsets.left - ZBDefaultEdgeInsets.right - (ZBDefaultColumnCount - 1) * ZBDefaultColumnMargin )/ ZBDefaultColumnCount ;
      // indexPath位置上的小格子的高度
-    CGFloat h = 50 + arc4random_uniform(100);//   50 < h的范围 < 150
+    // CGFloat h = 50 + arc4random_uniform(100);//   50 < h的范围 < 150
+    
+    // indexPath位置上的小格子的高度 = 调用代理方法，并将indexPath.item,w作为参数.代理方法根据indexPath.item得到当前要计算的是哪个小格子，代理方法根据w并利用交叉相成来等比例计算indexPath.item这个小格子的的高度，然后返回给h保存
+    CGFloat h = [self.delegate WaterFallLayout:self heightForItemAtIndex:indexPath.item ItemWidth:w];
     
     // 以下代码是找出高度最短的那一列
     // 假设先让第0列高度最短。目的:少遍历一次。遍历次数越少，说明优化的好嘛
