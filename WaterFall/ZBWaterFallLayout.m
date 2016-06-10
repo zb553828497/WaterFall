@@ -94,7 +94,7 @@ static const UIEdgeInsets ZBDefaultEdgeInsets = {10,10,10,10};
  */
 -(void)prepareLayout{
     [super prepareLayout];
-    // 清除以前计算的所有高度 (为什么)
+    // 清除以前计算的所有高度
     [self.columnHeights removeAllObjects];
     for (NSInteger i = 0; i < ZBDefaultColumnCount; i++) {
         [self.columnHeights addObject:@(ZBDefaultEdgeInsets.top)];
@@ -120,7 +120,10 @@ static const UIEdgeInsets ZBDefaultEdgeInsets = {10,10,10,10};
 
 }
 /**
- * 3.返回indexPath位置上的小格子对应的布局属性。即计算每一个小格子的位置就会调用，如果有50个小格子，那么就调用50次
+ * 3.返回indexPath位置上的小格子对应的布局属性。即计算每一个小格子的位置就会调用，如果有50个小格子，那么就调用50次,
+ *   每次调用，一个小格子将会显示在3列中的最短列中。如果这次调用这个方法，小格子显示在最短列中,那么这个最短列的高度将
+ *   增加,下次再调用时候，之前的最短列的高度变化了，这时，再重新比较三列中高度最短的那一列,又会把新的小格子显示在新的最
+ *   短列中，同样，最短列高度仍然会增加(因为添加了小格子在最短列中)
  */
 -(UICollectionViewLayoutAttributes *)layoutAttributesForItemAtIndexPath:(NSIndexPath *)indexPath{
     // 创建布局属性
@@ -136,9 +139,11 @@ static const UIEdgeInsets ZBDefaultEdgeInsets = {10,10,10,10};
     // indexPath位置上的小格子的高度 = 调用代理方法，并将indexPath.item,w作为参数.代理方法根据indexPath.item得到当前要计算的是哪个小格子，代理方法根据w并利用交叉相成来等比例计算indexPath.item这个小格子的的高度，然后返回给h保存
     CGFloat h = [self.delegate WaterFallLayout:self heightForItemAtIndex:indexPath.item ItemWidth:w];
     
-    // 以下代码是找出高度最短的那一列
-    // 假设先让第0列高度最短。目的:少遍历一次。遍历次数越少，说明优化的好嘛
+    // 以下代码是找出高度最短的那一列.注意:MinHeightAtColumn表示:计算每一列中的所有小格子的总高度，取高度最小的那一列最为最小高度。目的:为了计算小格子的y坐标。小格子的y坐标=最小高度
+    
+    // 用下标记录最短列
     NSInteger ShortestColumn = 0;
+    // 假设先让第0列高度最短。目的:少遍历一次。遍历次数越少，说明优化的好嘛
     // 第0列的总高度=这一列中所有的小格子的总高度+这一列中所有小格子的间距
     CGFloat MinHeightAtColumn = [self.columnHeights[0] doubleValue];
     for (NSInteger i = 0; i < ZBDefaultColumnCount; i++) {
@@ -155,7 +160,7 @@ static const UIEdgeInsets ZBDefaultEdgeInsets = {10,10,10,10};
     // x = 左间距 + 高度最小的那一列的列号 * (小格子的宽度 + 列间距)
     CGFloat x = ZBDefaultEdgeInsets.left + ShortestColumn * (w + ZBDefaultColumnMargin);
     // 计算indexPath位置上的小格子要显示在最短列时，小格子的y坐标
-    CGFloat y = MinHeightAtColumn;
+    CGFloat y = MinHeightAtColumn;//  y = 某列中所有小格子的最短高度
     // 如果是y坐标不等于顶部间距10，那么说明这一行不是第0行，就让这一行的y坐标=行间距+这一行的y坐标。
     // 如果y坐标 = 顶部间距间距10，那么说明这一行是第0行，那么第0行的y坐标 = 10
     if (y != ZBDefaultEdgeInsets.top) {
@@ -173,7 +178,7 @@ static const UIEdgeInsets ZBDefaultEdgeInsets = {10,10,10,10};
  */
 -(CGSize)collectionViewContentSize{
     CGFloat MaxHeightAtColumn = [self.columnHeights[0] doubleValue];
-    // 找出高度最高的那一列。目的:确定滚动范围最高滚动到哪里。如果找高度最短的那一列，那么最高的那一列就滚动不到了。
+    // 找出高度最高的那一列。目的:确定滚动范围最高滚动到哪里。如果找高度最短的那一列，那么高度最高的那一列就滚动不到了。
     for (NSInteger i = 0; i < ZBDefaultColumnCount; i++) {
         // 取得第i列的高度
         CGFloat columnHeight = [self.columnHeights[i] doubleValue];
