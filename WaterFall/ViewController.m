@@ -125,7 +125,7 @@ static NSString *const ZBShopId = @"shop";
     return 20;
 }
 -(CGFloat)ColumnCountInWaterFallLayout:(ZBWaterFallLayout *)waterFallLayout{
-    return 3;
+    return 10;
 }
 -(UIEdgeInsets)EdgeInsetsInWaterFallLayout:(ZBWaterFallLayout *)waterFallLayout{
     return UIEdgeInsetsMake(10, 20, 30, 100);

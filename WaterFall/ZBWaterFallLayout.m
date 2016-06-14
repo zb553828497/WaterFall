@@ -20,6 +20,7 @@ static const NSInteger ZBDefaultRowMargin = 10;
 static const UIEdgeInsets ZBDefaultEdgeInsets = {10,10,10,10};
 
 @interface ZBWaterFallLayout()
+
 /** 存放所有列的当前高度 */
 @property(nonatomic,strong)NSMutableArray *columnHeights;
 /** 存放所有小格子的布局属性 */
@@ -65,7 +66,7 @@ static const UIEdgeInsets ZBDefaultEdgeInsets = {10,10,10,10};
     if([self.delegate respondsToSelector:@selector(ColumnMarginInWaterFallLayout:)]){
         return [self.delegate ColumnMarginInWaterFallLayout:self];
     }else{
-        return ZBDefaultRowMargin;
+        return ZBDefaultColumnMargin;
     }
 }
 // 每一行小格子的数量由代理(ViewController)决定，代理只要实现了ColumnCountInWaterFallLayout:方法，并在代理方法中返回一个数字(例如3),那么声明代理方法的当前类(ZBWaterFallLayout)就能拿到这个3，把代理方法返回过来的3作为每一行小格子的数量
@@ -96,8 +97,8 @@ static const UIEdgeInsets ZBDefaultEdgeInsets = {10,10,10,10};
     [super prepareLayout];
     // 清除以前计算的所有高度
     [self.columnHeights removeAllObjects];
-    for (NSInteger i = 0; i < ZBDefaultColumnCount; i++) {
-        [self.columnHeights addObject:@(ZBDefaultEdgeInsets.top)];
+    for (NSInteger i = 0; i < self.columnMargin; i++) {
+        [self.columnHeights addObject:@(self.edgeInsets.top)];
     }
     // 清除之前所有的布局属性
     [self.attrsArray removeAllObjects];
@@ -132,7 +133,7 @@ static const UIEdgeInsets ZBDefaultEdgeInsets = {10,10,10,10};
     CGFloat collectionViewW = self.collectionView.frame.size.width;
     // 设置布局属性的frame
     // indexPath位置上的小格子的宽度 = (collectionView的宽度 - 左边缘 - 右边缘 - 中间的间距) / 列数
-    CGFloat w = (collectionViewW - ZBDefaultEdgeInsets.left - ZBDefaultEdgeInsets.right - (ZBDefaultColumnCount - 1) * ZBDefaultColumnMargin )/ ZBDefaultColumnCount ;
+    CGFloat w = (collectionViewW - self.edgeInsets.left - self.edgeInsets.right - (self.columnCount - 1) * self.columnMargin )/ self.columnCount ;
      // indexPath位置上的小格子的高度
     // CGFloat h = 50 + arc4random_uniform(100);//   50 < h的范围 < 150
     
@@ -146,7 +147,7 @@ static const UIEdgeInsets ZBDefaultEdgeInsets = {10,10,10,10};
     // 假设先让第0列高度最短。目的:少遍历一次。遍历次数越少，说明优化的好嘛
     // 第0列的总高度=这一列中所有的小格子的总高度+这一列中所有小格子的间距
     CGFloat MinHeightAtColumn = [self.columnHeights[0] doubleValue];
-    for (NSInteger i = 0; i < ZBDefaultColumnCount; i++) {
+    for (NSInteger i = 0; i < self.columnCount; i++) {
         // 取得第i列的高度
         CGFloat columnHeight = [self.columnHeights[i] doubleValue];
         // 如果MinHeightAtColumn的高度大于第i列的高度，就把第i列的高度变为最小高度
@@ -158,13 +159,13 @@ static const UIEdgeInsets ZBDefaultEdgeInsets = {10,10,10,10};
     }
     // 计算indexPath位置上的小格子要显示在最短列时，小格子的x坐标
     // x = 左间距 + 高度最小的那一列的列号 * (小格子的宽度 + 列间距)
-    CGFloat x = ZBDefaultEdgeInsets.left + ShortestColumn * (w + ZBDefaultColumnMargin);
+    CGFloat x = self.edgeInsets.left + ShortestColumn * (w + self.columnMargin);
     // 计算indexPath位置上的小格子要显示在最短列时，小格子的y坐标
     CGFloat y = MinHeightAtColumn;//  y = 某列中所有小格子的最短高度
     // 如果是y坐标不等于顶部间距10，那么说明这一行不是第0行，就让这一行的y坐标=行间距+这一行的y坐标。
     // 如果y坐标 = 顶部间距间距10，那么说明这一行是第0行，那么第0行的y坐标 = 10
-    if (y != ZBDefaultEdgeInsets.top) {
-        y+= ZBDefaultColumnMargin;
+    if (y != self.edgeInsets.top) {
+        y+= self.rowMargin;
     }
     // indexPath位置上的小格子的frame
     attrs.frame = CGRectMake(x, y, w, h);
@@ -179,15 +180,15 @@ static const UIEdgeInsets ZBDefaultEdgeInsets = {10,10,10,10};
 -(CGSize)collectionViewContentSize{
     CGFloat MaxHeightAtColumn = [self.columnHeights[0] doubleValue];
     // 找出高度最高的那一列。目的:确定滚动范围最高滚动到哪里。如果找高度最短的那一列，那么高度最高的那一列就滚动不到了。
-    for (NSInteger i = 0; i < ZBDefaultColumnCount; i++) {
+    for (NSInteger i = 0; i < self.columnCount; i++) {
         // 取得第i列的高度
         CGFloat columnHeight = [self.columnHeights[i] doubleValue];
         if(MaxHeightAtColumn < columnHeight){
             MaxHeightAtColumn = columnHeight;
         }
     }
-    // 滚动的宽度为0，滚动的高度为MaxHeightAtColumn + ZBDefaultEdgeInsets.bottom)
-    return CGSizeMake(0, MaxHeightAtColumn + ZBDefaultEdgeInsets.bottom);
+    // 滚动的宽度为0，滚动的高度为MaxHeightAtColumn + self.edgeInsets.bottom)
+    return CGSizeMake(0, MaxHeightAtColumn + self.edgeInsets.bottom);
 
 }
 
